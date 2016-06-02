@@ -6,9 +6,9 @@ use RandomLib\Factory as RandomLibFactory;
 
 class UrlGeneratorService implements UrlGeneratorInterface
 {
-    const LENGTH = 6;
+    const LENGTH = 7;
 
-    const ACCEPTED_CHARACTERS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    const ACCEPTED_CHARACTERS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
     /**
      * @return string

@@ -2,19 +2,12 @@
 
 namespace MiniUrl\Service;
 
-use DateTime;
-use MiniUrl\Entity\ShortUrl;
 use MiniUrl\Exception\InvalidArgumentException;
 use MiniUrl\Repository\RepositoryInterface;
 
 class ShortUrlService
 {
     const PATH_SEPARATOR = '/';
-
-    /**
-     * @var string
-     */
-    private $domain;
 
     /**
      * @var RepositoryInterface
@@ -27,16 +20,13 @@ class ShortUrlService
     private $generator;
 
     /**
-     * @param $domain
      * @param RepositoryInterface $shortUrlRepository
      * @param UrlGeneratorInterface|null $generator
      */
     public function __construct(
-        $domain,
         RepositoryInterface $shortUrlRepository,
         UrlGeneratorInterface $generator = null
     ) {
-        $this->domain = $this->normalizeUrl($domain);
         $this->shortUrlRepository = $shortUrlRepository;
 
         if (null === $generator) {
@@ -51,30 +41,12 @@ class ShortUrlService
      */
     private function normalizeUrl($url)
     {
-        return rtrim($url, self::PATH_SEPARATOR);
-    }
-
-    /**
-     * @param string $shortPath
-     * @return string
-     */
-    private function formShortUrl($shortPath)
-    {
-        return $this->domain . self::PATH_SEPARATOR . ltrim($shortPath, self::PATH_SEPARATOR);
-    }
-
-    /**
-     * @param string $path
-     * @return ShortUrl|null
-     */
-    public function expand($path)
-    {
-        return $this->shortUrlRepository->findByShortUrl($this->formShortUrl($path));
+        return rtrim(trim($url), self::PATH_SEPARATOR);
     }
 
     /**
      * @param string $longUrl
-     * @return ShortUrl|null
+     * @return string
      */
     public function shorten($longUrl)
     {
@@ -83,17 +55,16 @@ class ShortUrlService
         }
 
         $longUrl = $this->normalizeUrl($longUrl);
-        if ($shortUrl = $this->shortUrlRepository->findByLongUrl($longUrl)) {
-            return $shortUrl;
+        if ($shortHash = $this->shortUrlRepository->findShortHash($longUrl)) {
+            return $shortHash;
         }
 
         do {
-            $short = $this->formShortUrl($this->generator->generate());
-        } while ($unique = $this->shortUrlRepository->findByShortUrl($short));
+            $shortHash = $this->generator->generate();
+        } while ($this->shortUrlRepository->findLongUrl($shortHash));
 
-        $shortUrl = new ShortUrl($longUrl, $short, new DateTime());
-        $this->shortUrlRepository->save($shortUrl);
+        $this->shortUrlRepository->save($shortHash, $longUrl);
 
-        return $shortUrl;
+        return $shortHash;
     }
 }
